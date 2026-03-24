@@ -14,12 +14,12 @@ public class User{
     @Column(nullable = false)
     private String password;
     @Column(nullable = false)
-    private String salary;
+    private int salary;
     public User(){
 
     }
 
-    public User(String name,String password,String salary){
+    public User(String name,String password,int salary){
         this.salary = salary;
         this.name = name;
         this.password = password;
@@ -49,11 +49,11 @@ public class User{
         this.password = password;
     }
 
-    public String getSalary() {
+    public int getSalary() {
         return salary;
     }
 
-    public void setSalary(String salary) {
+    public void setSalary(int salary) {
         this.salary = salary;
     }
 }

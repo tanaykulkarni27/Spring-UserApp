@@ -1,8 +1,6 @@
 package com.test.demo;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
-import at.favre.lib.crypto.bcrypt.BCrypt;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,30 +10,28 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class Auth{
-    @Value("${app.secret}")
-    String JWT_SECRET;
-    private UserRepository userRepository;
-    public Auth(UserRepository usrrepo){
-        this.userRepository = usrrepo;
+    UserService userservice;
+    JWTAuth jwtService;
+
+    Auth(UserService usrsrv,JWTAuth jwtSrv){
+        this.userservice = usrsrv;
+        this.jwtService = jwtSrv;
     }
 
     @GetMapping("/")
     public HashMap home(){
-        HashMap m = new HashMap();
-        m.put("status",true);
-        m.put("data",userRepository.findAll());
-        return m;
+        return userservice.getUsers();
     }
 
     @PostMapping("/login")
     public HashMap Login(HttpServletRequest req, @RequestBody HashMap<String,String>data) {
         String name = data.get("name");
         String password =  data.get("password");
-        String hashedpassword = userRepository.getHashedPassword(name);
-        if( BCrypt.verifyer().verify(password.toCharArray(),hashedpassword).verified) {
+        if(userservice.login(name,password)) {
             HashMap response = new HashMap();
+            String token = jwtService.generateToken(name);
             response.put("status", true);
-            response.put("token", true);
+            response.put("token", token);
             return response;
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid username or password");
@@ -47,18 +43,7 @@ public class Auth{
         String password =  data.get("password");
         String salary =  data.get("salary");
         HashMap response = new HashMap();
-
-        if(salary == null || Integer.parseInt(salary) == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid salary amount");
-        }
-
-        User usr = new User();
-        usr.setName(name);
-        String HashedPassword = BCrypt.withDefaults().hashToString(12,password.toCharArray());
-
-        usr.setPassword(HashedPassword);
-        usr.setSalary(salary);
-        userRepository.save(usr);
+        userservice.createUser(name,password,Integer.parseInt(salary));
         response.put("status", true);
         return response;
     }
